@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Load OpenClaw env vars (keys, OPENCLAW_PY, etc.)
+ENV_FILE="$HOME/.openclaw/.env"
+if [[ -f "$ENV_FILE" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+fi
+
+PY="${OPENCLAW_PY:-python3}"
+TOOL="$HOME/.openclaw/tools/twilio/twilio-bridge.py"
+
+exec "$PY" "$TOOL" "$@"

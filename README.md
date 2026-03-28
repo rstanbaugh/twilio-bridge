@@ -2,13 +2,16 @@
 # Twilio Bridge for OpenClaw
 
 A thin, secure HTTP bridge for relaying Twilio SMS webhooks to a local OpenClaw Gateway, with all configuration via environment variables.
+
 **Voice calling is not handled by this bridge and is instead delegated to the native OpenClaw `voice-call` plugin.**
+**No /voice endpoint is present in this bridge for MVP.**
 
 ## Overview
 - Receives inbound Twilio SMS webhooks (via Cloudflare Tunnel)
 - Validates Twilio signatures
 - Normalizes and forwards SMS to OpenClaw Gateway using OpenAI-compatible HTTP API
 - Returns TwiML responses to Twilio
+- SMS fallback message is configurable via environment variable, with a safe default if unset
 - Structured logging, health endpoints, and launchd compatibility
 
 ## Quick Start
@@ -31,8 +34,9 @@ A thin, secure HTTP bridge for relaying Twilio SMS webhooks to a local OpenClaw 
 
 4. **Run the bridge:**
     ```bash
-    python twilio-bridge.py
+    python -m twilio_bridge.main
     ```
+    Or use your ~/bin bash wrapper if preferred.
 
 5. **Configure Cloudflare Tunnel** to forward public webhook URLs to your local bridge (see REQUIREMENTS.md for details).
 
@@ -57,6 +61,8 @@ See `.env.example` for a template.
 - `GET /healthz` — Health check
 - `GET /readyz` — Readiness check
 
+**No /voice endpoint is present in this bridge. Voice is handled by the OpenClaw plugin.**
+
 ## Security
 - All secrets and credentials must be set in `.env`
 - Never commit `.env` or real credentials to version control
@@ -66,12 +72,16 @@ See `.env.example` for a template.
 ## Development & Testing
 - All configuration is via environment variables
 - Tests are in `tests/` and should be run with `pytest`
+- No /voice tests are present in this project.
 - Use `.env.example` as a safe template for sharing
 
 ## See Also
 - [REQUIREMENTS.md](REQUIREMENTS.md) — Full requirements and design
 - [.env.example](.env.example) — Environment variable template
 - [AGENTS.md](AGENTS.md) — Project agent/testing policy
+
+## Cloudflare Tunnel Example
+See REQUIREMENTS.md for example Cloudflare Tunnel config snippets. Production tunnel config is deployment-specific and not included in the repo.
 
 ---
 
