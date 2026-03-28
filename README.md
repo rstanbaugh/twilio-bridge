@@ -10,7 +10,6 @@ A thin, secure HTTP bridge for relaying Twilio SMS webhooks to a local OpenClaw 
 - Normalizes and forwards SMS to OpenClaw Gateway using OpenAI-compatible HTTP API
 - Returns TwiML responses to Twilio
 - Structured logging, health endpoints, and launchd compatibility
-- **Voice webhooks are handled by the OpenClaw `voice-call` plugin, not this bridge.**
 
 ## Quick Start
 
@@ -48,7 +47,6 @@ All sensitive configuration is set in `.env` (never commit this file):
 - TWILIO_BRIDGE_PORT
 - TWILIO_BRIDGE_LOG_LEVEL
 - TWILIO_SMS_FALLBACK_MESSAGE
-- TWILIO_VOICE_GREETING
 - TWILIO_VALIDATE_SIGNATURE
 - OPENCLAW_TIMEOUT_SECONDS
 
@@ -64,7 +62,6 @@ See `.env.example` for a template.
 - Never commit `.env` or real credentials to version control
 - Twilio signature validation is enforced by default
 - Bridge binds to localhost by default; public ingress is via Cloudflare Tunnel only
-- Voice is not handled by this bridge; use the OpenClaw `voice-call` plugin for voice features.
 
 ## Development & Testing
 - All configuration is via environment variables
