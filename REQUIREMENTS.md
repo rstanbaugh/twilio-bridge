@@ -5,9 +5,8 @@
     - inbound SMS to reach OpenClaw
     - OpenClaw to generate a reply
     - reply to be returned to Twilio as SMS
-    - inbound voice calls to reach a minimal voice endpoint
-    - future extension to richer voice interaction
 - This service is a **thin HTTP bridge**, not a standalone agent runtime.
+- Voice calling is **not handled by this bridge** and is instead delegated to the native OpenClaw `voice-call` plugin.
 - It must fit the existing Odin/OpenClaw architecture:
     - OpenClaw gateway remains bound to `127.0.0.1:18789`
     - Twilio bridge runs locally on Odin
@@ -19,18 +18,18 @@
 
 ### In Scope (MVP)
 - Python service running locally on Odin
-- HTTP endpoints for Twilio SMS and Voice webhooks
+- HTTP endpoint for Twilio SMS webhook
 - Twilio request signature validation
 - normalization of inbound Twilio requests into an internal message shape
 - forwarding SMS content to local OpenClaw
 - returning a TwiML SMS response to Twilio
-- minimal voice webhook that returns valid TwiML
 - structured logging
 - simple configuration via environment variables
 - suitable for running under launchd
 
 ### Out of Scope (MVP)
 
+- inbound or outbound voice call handling
 - real-time bidirectional voice streaming
 - speech-to-text / text-to-speech pipeline
 - multi-tenant routing
@@ -57,50 +56,66 @@
 ### OpenClaw / Odin
 
 - OpenClaw gateway must remain loopback-only on Odin and should not be directly exposed to LAN/WAN.  [oai_citation:6‡odin_configuration.md](sediment://file_00000000ead871f5a12e66c8192fa437)
+- OpenClaw provides an OpenAI-compatible OpenResponses HTTP API at `http://127.0.0.1:18789/v1/responses`.
+- Voice calling should use the native OpenClaw `voice-call` plugin rather than this bridge.
 
 ---
 
 ## 4. High-Level Architecture
+
+### SMS
 ```text
-Twilio
-  -> HTTPS webhook
-  -> Cloudflare
-  -> Cloudflare Tunnel
-  -> twilio-bridge on Odin
-  -> OpenClaw gateway on 127.0.0.1:18789
-  -> response back through twilio-bridge
-  -> Twilio
+Twilio (SMS)
+    -> HTTPS webhook
+    -> Cloudflare
+    -> Cloudflare Tunnel
+    -> twilio-bridge on Odin (127.0.0.1:3001)
+    -> OpenClaw gateway on 127.0.0.1:18789
+    -> response back through twilio-bridge
+    -> Twilio
+```
+
+### Voice
+```text
+Twilio (Voice)
+    -> HTTPS webhook
+    -> Cloudflare
+    -> Cloudflare Tunnel
+    -> OpenClaw voice-call plugin
 ```
 
 ## 5. Repository / File Placement
-Target location: `~/.openclaw/tools/twilio`
-Launch point: `~/.openclaw/tools/twilio/twilio-bridge.py`
-Environment variables: loaded from `.env` in the project directory (i.e., `~/.openclaw/tools/twilio/.env`) by default. You may override or supplement with a global `.env` if needed for production or multi-tool setups.
-Expected initial files:
-    ```bash
-    twilio/
-    README.md
-    REQUIREMENTS.md
-    twilio-bridge.py
-    .env.example
-    src/
-        twilio_bridge/
-        __init__.py
-        config.py
-        app.py
-        routes_sms.py
-        routes_voice.py
-        twilio_security.py
-        openclaw_client.py
-        twiml.py
-        models.py
-        logging_utils.py
-    tests/
-        test_security.py
-        test_sms_route.py
-        test_voice_route.py
-        test_openclaw_client.py
-    ```
+- Target location: `~/.openclaw/tools/twilio`
+- Environment variables:
+    - local development: `.env.local` in the project directory
+    - committed example: `.env.example`
+    - production: launchd or external environment injection
+- Recommended package layout:
+```text
+twilio/
+├── AGENTS.md
+├── README.md
+├── REQUIREMENTS.md
+├── .env.example
+├── .gitignore
+├── pyproject.toml
+├── src/
+│   └── twilio_bridge/
+│       ├── __init__.py
+│       ├── main.py
+│       ├── config.py
+│       ├── app.py
+│       ├── routes_sms.py
+│       ├── twilio_security.py
+│       ├── openclaw_client.py
+│       ├── twiml.py
+│       ├── models.py
+│       └── logging_utils.py
+└── tests/
+    ├── test_security.py
+    ├── test_sms_route.py
+    └── test_openclaw_client.py
+```
 
 ## 6. Functional Requirements
 
@@ -134,17 +149,9 @@ Requirements:
     - Twilio documents that inbound message webhooks contain sender message details and are delivered to the configured webhook URL. 
 
 ### FR-3: Voice Webhook Endpoint
-- The system shall expose a Voice webhook endpoint: `POST /voice`
-- Behavior for MVP:
-	- accept Twilio inbound voice webhook requests
-	- validate Twilio signature
-	- return valid TwiML for a simple voice response
-- Initial MVP response may be one of:
-	- a fixed <Say> response
-	- a minimal greeting plus hangup
-	 -a minimal greeting plus <Gather> stub, if desired
-- Notes:
-	- Twilio voice calls to a phone number generate an incoming call webhook, and the application responds using TwiML.
+- The bridge shall not implement production voice handling.
+- Inbound and outbound voice calls shall be handled by the native OpenClaw `voice-call` plugin.
+- The bridge may optionally expose a development-only `/voice` stub that returns static TwiML, but this is not required for MVP and is not part of acceptance criteria.
 
 ### FR-4: Twilio Signature Validation
 - The system shall reject unsigned or invalidly signed Twilio requests.

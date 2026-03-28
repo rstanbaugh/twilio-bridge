@@ -1,14 +1,16 @@
+
 # Twilio Bridge for OpenClaw
 
-A thin, secure HTTP bridge for relaying Twilio SMS and voice webhooks to a local OpenClaw Gateway, with all configuration via environment variables.
+A thin, secure HTTP bridge for relaying Twilio SMS webhooks to a local OpenClaw Gateway, with all configuration via environment variables.
+**Voice calling is not handled by this bridge and is instead delegated to the native OpenClaw `voice-call` plugin.**
 
 ## Overview
-- Receives inbound Twilio SMS and voice webhooks (via Cloudflare Tunnel)
+- Receives inbound Twilio SMS webhooks (via Cloudflare Tunnel)
 - Validates Twilio signatures
 - Normalizes and forwards SMS to OpenClaw Gateway using OpenAI-compatible HTTP API
 - Returns TwiML responses to Twilio
-- Minimal voice webhook for MVP (can be extended or replaced by OpenClaw Voice Call plugin)
 - Structured logging, health endpoints, and launchd compatibility
+- **Voice webhooks are handled by the OpenClaw `voice-call` plugin, not this bridge.**
 
 ## Quick Start
 
@@ -54,7 +56,6 @@ See `.env.example` for a template.
 
 ## Endpoints
 - `POST /sms` — Twilio SMS webhook
-- `POST /voice` — Twilio voice webhook (MVP: simple TwiML)
 - `GET /healthz` — Health check
 - `GET /readyz` — Readiness check
 
@@ -63,6 +64,7 @@ See `.env.example` for a template.
 - Never commit `.env` or real credentials to version control
 - Twilio signature validation is enforced by default
 - Bridge binds to localhost by default; public ingress is via Cloudflare Tunnel only
+- Voice is not handled by this bridge; use the OpenClaw `voice-call` plugin for voice features.
 
 ## Development & Testing
 - All configuration is via environment variables
